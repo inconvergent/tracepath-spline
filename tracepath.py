@@ -14,7 +14,7 @@ from operator import itemgetter
 from scipy.spatial import cKDTree
 import gtk, gobject
 
-np.random.seed(2)
+#np.random.seed(2)
 
 PI = pi
 TWOPI = pi*2.
@@ -35,10 +35,11 @@ NUM_NEAR_INDICES = 30
 SHIFT_INDICES = 5
 
 W = 0.9
-PIX_BETWEEN = 2
+PIX_BETWEEN = 20
 
 START_X = (1.-W)*0.5
 START_Y = (1.-W)*0.5
+STOP_X = 1.-START_X
 #START_X = 0.5
 #START_Y = 0.5
 
@@ -50,7 +51,8 @@ H = W/NUM_LINES
 FILENAME = 'aa'
 
 TURTLE_ANGLE_NOISE = pi*0.05
-INIT_TURTLE_ANGLE_NOISE = 0.0
+INIT_TURTLE_ANGLE_NOISE = 0
+NOISE_SCALE = ONE*3
 
 def myrandom(size):
 
@@ -107,7 +109,6 @@ class Render(object):
     self.ctx = ctx
 
   def line(self,xy):
-
 
     self.ctx.move_to(xy[0,0],xy[0,1])
     for (x,y) in xy[1:]:
@@ -175,19 +176,25 @@ def main():
 
   render = Render(SIZE)
 
-  render.ctx.set_source_rgb(1,0,0)
-  render.ctx.set_line_width(ONE)
+  #render.ctx.set_source_rgb(1,0,0)
+  render.ctx.set_line_width(ONE*2.)
+  render.ctx.set_source_rgba(0,0,0,0.8)
 
   the,xy = turtle(0.5*PI,START_X,START_Y,NUMMAX)
   render.line(xy)
 
   for i in xrange(NUM_LINES):
 
-    if not i%10:
-      print i, NUM_LINES
 
     path = Path(xy)
     circles,xy = path.trace(PIX_BETWEEN*ONE,-PIHALF)
+
+    alpha_noise = myrandom(len(xy))*pi
+    xy_noise = column_stack([cos(alpha_noise),\
+                             sin(alpha_noise)])*NOISE_SCALE
+    xy += xy_noise
+
+    print 'num',i,'tot', NUM_LINES, 'points', xy.shape[0]
 
     tck,u = interpolate.splprep([xy[:,0],xy[:,1]],s=0)
     unew = np.linspace(0,1,NUMMAX)
@@ -195,12 +202,21 @@ def main():
 
     xy = column_stack(out)
 
-    render.ctx.set_source_rgb(0,0,0)
     render.line(xy)
 
-    alpha_noise = myrandom(len(xy))*pi
-    xy_noise = column_stack([cos(alpha_noise),sin(alpha_noise)])*ONE*0.5
-    xy += xy_noise
+    #alpha_noise = myrandom(len(xy))*pi
+    #xy_noise = column_stack([cos(alpha_noise),\
+                             #sin(alpha_noise)])*ONE
+    #xy += xy_noise
+
+    top_ymask = xy[:,1]>START_Y
+    xy = xy[top_ymask,:]
+
+    #bottom_ymask = xy[:,1]<1
+    #xy = xy[bottom_ymask,:]
+
+    if xy[0,0]>STOP_X:
+      break
 
     if not i%100:
 
