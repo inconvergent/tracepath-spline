@@ -18,7 +18,7 @@ PI = pi
 TWOPI = pi*2.
 PIHALF = pi*0.5
 
-SIZE = 5000
+SIZE = 20000
 ONE = 1./SIZE
 
 BACK = 1.
@@ -31,7 +31,7 @@ Y_MAX = 1-10*ONE
 DIST_NEAR_INDICES = np.inf
 
 W = 0.9
-PIX_BETWEEN = 10
+PIX_BETWEEN = 20
 
 START_X = (1.-W)*0.5
 STOP_X = 1.-START_X
@@ -43,12 +43,12 @@ NUMMAX = int(2*SIZE)
 NUM_LINES = int(SIZE*W/PIX_BETWEEN)
 H = W/NUM_LINES
 
-FILENAME = 'aa'
+FILENAME = 'cc'
 
 INIT_TURTLE_ANGLE_NOISE = 0.
-NOISE_SCALE = ONE*1.2
+NOISE_SCALE = ONE*3
 
-LINE_RAD = ONE*3
+LINE_RAD = ONE*2.4
 
 def myrandom(size):
 
@@ -233,13 +233,6 @@ def main():
     draw_start,draw_stop = get_draw_limits(xy)
 
     #line_rad = random(size=draw_stop-draw_start)*LINE_RAD
-    
-    #dx = xy[1:,0] - xy[-1:,0]
-    #dy = xy[1:,1] - xy[-1:,1]
-    #angle = arctan2(dy,dx) + PIHALF
-    #print angle
-    #a = ONE + angle/PI*ONE
-
     #render.circles(xy[draw_start:draw_stop,:],a[draw_start:draw_stop])
 
     render.line(xy[draw_start:draw_stop,:])
