@@ -7,12 +7,11 @@ from numpy import cos, sin, pi, arctan2, sqrt,\
 
 from numpy.random import random, normal, randint, shuffle
 from scipy import interpolate
+
 import numpy as np
 import cairo
 from time import time as time
-from operator import itemgetter
 from scipy.spatial import cKDTree
-import gtk, gobject
 
 
 PI = pi
@@ -86,6 +85,21 @@ def turtle(sthe,sx,sy,steps):
 
   return THE, XY
 
+def get_draw_limits(xy):
+
+  draw_start = 0
+  draw_stop = len(xy)
+
+  top_ymask = (xy[:,1]<START_Y).nonzero()[0]
+  if top_ymask.any():
+    draw_start = top_ymask.max()
+
+  bottom_ymask = (xy[:,1]>STOP_Y).nonzero()[0]
+  if bottom_ymask.any():
+    draw_stop = bottom_ymask.min()
+
+  return draw_start, draw_stop
+
 class Render(object):
 
   def __init__(self,n):
@@ -158,7 +172,6 @@ class Path(object):
       alpha = arctan2(xy_diff_sum[1],xy_diff_sum[0])
       alphas.append(alpha)
 
-    #noise = myrandom(len(alphas))*0.5
     alphas = array(alphas) + the
 
     dx = cos(alphas)
@@ -172,8 +185,27 @@ class Path(object):
     xy_new[:,0] += dx*r
     xy_new[:,1] += dy*r
 
-    return xy_circles, xy_new
+    self.xy_circles = xy_circles
+    self.xy_new = xy_new
 
+  def noise(self):
+
+    alpha_noise = myrandom(len(self.xy_new))*pi
+    noise = column_stack([cos(alpha_noise),\
+                          sin(alpha_noise)])*NOISE_SCALE
+    self.xy_new_noise = self.xy_new + noise
+
+  def interpolate(self,num_p_multiplier):
+
+    num_points = len(self.xy_circles)*num_p_multiplier
+
+    tck,u = interpolate.splprep([self.xy_new_noise[:,0],\
+                                 self.xy_new_noise[:,1]],s=0)
+
+    unew = np.linspace(0,1,num_points)
+    out = interpolate.splev(unew,tck)
+
+    self.xy_interpolated = column_stack(out)
 
 def main():
 
@@ -190,40 +222,27 @@ def main():
 
 
     path = Path(xy)
-    circles,xy = path.trace(PIX_BETWEEN*ONE,-PIHALF)
+    path.trace(PIX_BETWEEN*ONE,-PIHALF)
+    path.noise()
+    path.interpolate(PIX_BETWEEN*2)
 
-    alpha_noise = myrandom(len(xy))*pi
-    xy_noise = column_stack([cos(alpha_noise),\
-                             sin(alpha_noise)])*NOISE_SCALE
-    xy += xy_noise
+    xy = path.xy_interpolated
 
-    print 'num',i,'tot', NUM_LINES, 'points', xy.shape[0]
+    print 'num',i,'tot', NUM_LINES, 'points', len(path.xy_circles)
 
-    tck,u = interpolate.splprep([xy[:,0],xy[:,1]],s=0)
-    unew = np.linspace(0,1,NUMMAX*2)
-    out = interpolate.splev(unew,tck)
+    draw_start,draw_stop = get_draw_limits(xy)
 
-    xy = column_stack(out)
-
-    draw_start = 0
-    draw_stop = len(xy)
-
-    top_ymask = (xy[:,1]<START_Y).nonzero()[0]
-    if top_ymask.any():
-      draw_start = top_ymask.max()
-
-    bottom_ymask = (xy[:,1]>STOP_Y).nonzero()[0]
-    if bottom_ymask.any():
-      draw_stop = bottom_ymask.min()
-
-    line_rad = random(size=draw_stop-draw_start)*LINE_RAD
+    #line_rad = random(size=draw_stop-draw_start)*LINE_RAD
     
-    dx = xy[1:,0] - xy[-1:,0]
-    dy = xy[1:,1] - xy[-1:,1]
-    a = (arctan2(dy,dx) + PI)/TWOPI
-    a *= ONE*3
+    #dx = xy[1:,0] - xy[-1:,0]
+    #dy = xy[1:,1] - xy[-1:,1]
+    #angle = arctan2(dy,dx) + PIHALF
+    #print angle
+    #a = ONE + angle/PI*ONE
 
-    render.circles(xy[draw_start:draw_stop,:],a[draw_start:draw_stop])
+    #render.circles(xy[draw_start:draw_stop,:],a[draw_start:draw_stop])
+
+    render.line(xy[draw_start:draw_stop,:])
 
     if (xy[:,0]>STOP_X).any():
       break
