@@ -49,6 +49,8 @@ FILENAME = 'aa'
 INIT_TURTLE_ANGLE_NOISE = 0.
 NOISE_SCALE = ONE*1.2
 
+LINE_RAD = ONE*3
+
 def myrandom(size):
 
   #res = normal(size=size)
@@ -109,6 +111,12 @@ class Render(object):
     for (x,y) in xy[1:]:
       self.ctx.line_to(x,y)
     self.ctx.stroke()
+
+  def circles(self,xy,rr):
+
+    for r,(x,y) in zip(rr,xy):
+      self.ctx.arc(x,y,r,0,TWOPI)
+      self.ctx.fill()
 
   def circle(self,xy,r):
 
@@ -192,7 +200,7 @@ def main():
     print 'num',i,'tot', NUM_LINES, 'points', xy.shape[0]
 
     tck,u = interpolate.splprep([xy[:,0],xy[:,1]],s=0)
-    unew = np.linspace(0,1,NUMMAX)
+    unew = np.linspace(0,1,NUMMAX*2)
     out = interpolate.splev(unew,tck)
 
     xy = column_stack(out)
@@ -208,7 +216,14 @@ def main():
     if bottom_ymask.any():
       draw_stop = bottom_ymask.min()
 
-    render.line(xy[draw_start:draw_stop,:])
+    line_rad = random(size=draw_stop-draw_start)*LINE_RAD
+    
+    dx = xy[1:,0] - xy[-1:,0]
+    dy = xy[1:,1] - xy[-1:,1]
+    a = (arctan2(dy,dx) + PI)/TWOPI
+    a *= ONE*3
+
+    render.circles(xy[draw_start:draw_stop,:],a[draw_start:draw_stop])
 
     if (xy[:,0]>STOP_X).any():
       break
