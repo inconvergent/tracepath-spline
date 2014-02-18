@@ -14,7 +14,6 @@ from operator import itemgetter
 from scipy.spatial import cKDTree
 import gtk, gobject
 
-#np.random.seed(2)
 
 PI = pi
 TWOPI = pi*2.
@@ -31,28 +30,24 @@ X_MAX = 1-10*ONE
 Y_MAX = 1-10*ONE
 
 DIST_NEAR_INDICES = np.inf
-NUM_NEAR_INDICES = 30
-SHIFT_INDICES = 5
 
 W = 0.9
-PIX_BETWEEN = 20
+PIX_BETWEEN = 10
 
 START_X = (1.-W)*0.5
-START_Y = (1.-W)*0.5
 STOP_X = 1.-START_X
-#START_X = 0.5
-#START_Y = 0.5
+
+START_Y = (1.-W)*0.5
+STOP_Y = 1.-START_Y
 
 NUMMAX = int(2*SIZE)
 NUM_LINES = int(SIZE*W/PIX_BETWEEN)
-#NUM_LINES = 150
 H = W/NUM_LINES
 
 FILENAME = 'aa'
 
-TURTLE_ANGLE_NOISE = pi*0.05
-INIT_TURTLE_ANGLE_NOISE = 0
-NOISE_SCALE = ONE*3
+INIT_TURTLE_ANGLE_NOISE = 0.
+NOISE_SCALE = ONE*1.2
 
 def myrandom(size):
 
@@ -181,7 +176,7 @@ def main():
   render.ctx.set_source_rgba(0,0,0,0.8)
 
   the,xy = turtle(0.5*PI,START_X,START_Y,NUMMAX)
-  render.line(xy)
+  #render.line(xy)
 
   for i in xrange(NUM_LINES):
 
@@ -202,20 +197,20 @@ def main():
 
     xy = column_stack(out)
 
-    render.line(xy)
+    draw_start = 0
+    draw_stop = len(xy)
 
-    #alpha_noise = myrandom(len(xy))*pi
-    #xy_noise = column_stack([cos(alpha_noise),\
-                             #sin(alpha_noise)])*ONE
-    #xy += xy_noise
+    top_ymask = (xy[:,1]<START_Y).nonzero()[0]
+    if top_ymask.any():
+      draw_start = top_ymask.max()
 
-    top_ymask = xy[:,1]>START_Y
-    xy = xy[top_ymask,:]
+    bottom_ymask = (xy[:,1]>STOP_Y).nonzero()[0]
+    if bottom_ymask.any():
+      draw_stop = bottom_ymask.min()
 
-    #bottom_ymask = xy[:,1]<1
-    #xy = xy[bottom_ymask,:]
+    render.line(xy[draw_start:draw_stop,:])
 
-    if xy[0,0]>STOP_X:
+    if (xy[:,0]>STOP_X).any():
       break
 
     if not i%100:
