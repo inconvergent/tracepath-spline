@@ -18,7 +18,7 @@ PI = pi
 TWOPI = pi*2.
 PIHALF = pi*0.5
 
-SIZE = 20000
+SIZE = 4000
 ONE = 1./SIZE
 
 BACK = 1.
@@ -85,20 +85,20 @@ def turtle(sthe,sx,sy,steps):
 
   return THE, XY
 
-def get_draw_limits(xy):
+def get_limit_indices(xy,top,bottom):
 
-  draw_start = 0
-  draw_stop = len(xy)
+  start = 0
+  stop = len(xy)
 
-  top_ymask = (xy[:,1]<START_Y).nonzero()[0]
+  top_ymask = (xy[:,1]<top).nonzero()[0]
   if top_ymask.any():
-    draw_start = top_ymask.max()
+    start = top_ymask.max()
 
-  bottom_ymask = (xy[:,1]>STOP_Y).nonzero()[0]
+  bottom_ymask = (xy[:,1]>bottom).nonzero()[0]
   if bottom_ymask.any():
-    draw_stop = bottom_ymask.min()
+    stop = bottom_ymask.min()
 
-  return draw_start, draw_stop
+  return start, stop
 
 class Render(object):
 
@@ -149,6 +149,8 @@ class Path(object):
 
     all_near_inds = self.tree.query_ball_point(self.xy,r)
 
+    numxy = len(self.xy)
+
     near_last = []
     circles = []
     for k,inds in enumerate(all_near_inds):
@@ -156,9 +158,14 @@ class Path(object):
       ii = set(inds)
       isect = ii.intersection(near_last)
 
-      if len(isect)<1:
+      if len(isect)<5:
         near_last = inds
         circles.append((k,inds))
+
+    ## attach last node.
+    if circles[-1][0] < numxy-1:
+
+      circles.append((numxy-1,all_near_inds[-1]))
 
     alphas = []
     for k,inds in circles:
@@ -193,14 +200,14 @@ class Path(object):
     alpha_noise = myrandom(len(self.xy_new))*pi
     noise = column_stack([cos(alpha_noise),\
                           sin(alpha_noise)])*NOISE_SCALE
-    self.xy_new_noise = self.xy_new + noise
+    self.xy_new += noise
 
   def interpolate(self,num_p_multiplier):
 
     num_points = len(self.xy_circles)*num_p_multiplier
 
-    tck,u = interpolate.splprep([self.xy_new_noise[:,0],\
-                                 self.xy_new_noise[:,1]],s=0)
+    tck,u = interpolate.splprep([self.xy_new[:,0],\
+                                 self.xy_new[:,1]],s=0)
 
     unew = np.linspace(0,1,num_points)
     out = interpolate.splev(unew,tck)
@@ -230,11 +237,15 @@ def main():
 
     print 'num',i,'tot', NUM_LINES, 'points', len(path.xy_circles)
 
-    draw_start,draw_stop = get_draw_limits(xy)
-
     #line_rad = random(size=draw_stop-draw_start)*LINE_RAD
     #render.circles(xy[draw_start:draw_stop,:],a[draw_start:draw_stop])
 
+    ## remove nodes above and below canvas
+    canvas_start,canvas_stop = get_limit_indices(xy,top=0.,bottom=1.)
+    xy = xy[canvas_start:canvas_stop,:]
+
+    ## render nodes above STOP_Y and below START_Y
+    draw_start,draw_stop = get_limit_indices(xy,top=START_Y,bottom=STOP_Y)
     render.line(xy[draw_start:draw_stop,:])
 
     if (xy[:,0]>STOP_X).any():
