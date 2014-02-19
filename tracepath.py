@@ -3,7 +3,8 @@
 
 from numpy import cos, sin, pi, arctan2, sqrt,\
                   square, linspace, zeros, array,\
-                  concatenate, delete, row_stack, column_stack
+                  concatenate, delete, row_stack, column_stack,\
+                  cumsum
 
 from numpy.random import random, normal, randint, shuffle
 from scipy import interpolate
@@ -50,6 +51,7 @@ NOISE_SCALE = ONE*3
 
 LINE_RAD = ONE*2.4
 
+
 def myrandom(size):
 
   #res = normal(size=size)
@@ -60,30 +62,17 @@ def myrandom(size):
 
 def turtle(sthe,sx,sy,steps):
 
-  XY = zeros((steps,2),'float')
-  THE = zeros(steps,'float')
-
-  XY[0,0] = sx
-  XY[0,1] = sy
-  THE[0] = sthe
-  the = sthe
-
   noise = myrandom(size=steps)*INIT_TURTLE_ANGLE_NOISE
-  for k in xrange(1,steps):
+  noise[0] = 0.
+  the = sthe+cumsum(noise)
 
-    x = XY[k-1,0] + cos(the)*ONE
-    y = XY[k-1,1] + sin(the)*ONE
-    XY[k,0] = x
-    XY[k,1] = y
-    THE[k] = the
-    the += noise[k]
+  dx = cos(the)*ONE
+  dy = sin(the)*ONE
 
-    #if x>X_MAX or x<X_MIN or y>Y_MAX or y<Y_MIN:
-      #XY = XY[:k,:]
-      #THE = THE[:k]
-      #break
+  xy = column_stack(( START_X + cumsum(dx),START_Y + cumsum(dy)))
 
-  return THE, XY
+  return the, xy
+
 
 def get_limit_indices(xy,top,bottom):
 
@@ -99,6 +88,7 @@ def get_limit_indices(xy,top,bottom):
     stop = bottom_ymask.min()
 
   return start, stop
+
 
 class Render(object):
 
