@@ -19,7 +19,7 @@ PI = pi
 TWOPI = pi*2.
 PIHALF = pi*0.5
 
-SIZE = 4000
+SIZE = 5000
 ONE = 1./SIZE
 
 BACK = 1.
@@ -44,12 +44,12 @@ NUMMAX = int(2*SIZE)
 NUM_LINES = int(SIZE*W/PIX_BETWEEN)
 H = W/NUM_LINES
 
-FILENAME = 'cc'
+FILENAME = 'dd'
 
 INIT_TURTLE_ANGLE_NOISE = 0.
-NOISE_SCALE = ONE*3
+NOISE_SCALE = ONE*3.4 ## use ~2 for SIZE=20000
 
-LINE_RAD = ONE*2.4
+#LINE_RAD = ONE*2.4
 
 
 def myrandom(size):
@@ -160,6 +160,7 @@ class Path(object):
     alphas = []
     for k,inds in circles:
 
+      ## TODO: test average angle?
       inds_s = array(sorted(inds),'int')
       xy_diff_sum = self.xy[inds_s[-1],:]-self.xy[inds_s[0],:]
 
@@ -171,16 +172,10 @@ class Path(object):
 
     alphas = array(alphas) + the
 
+    xy_circles = row_stack([self.xy[k,:] for k,_ in circles])
     dx = cos(alphas)
     dy = sin(alphas)
-
-    xy_circles = row_stack([self.xy[k,:] for k,_ in circles])
-
-    xy_new = zeros(xy_circles.shape,'float')
-    xy_new[:,:] = xy_circles[:,:]
-
-    xy_new[:,0] += dx*r
-    xy_new[:,1] += dy*r
+    xy_new  = xy_circles[:,:] + column_stack((dx*r,dy*r))
 
     self.xy_circles = xy_circles
     self.xy_new = xy_new
@@ -208,12 +203,10 @@ def main():
 
   render = Render(SIZE)
 
-  #render.ctx.set_source_rgb(1,0,0)
   render.ctx.set_line_width(ONE*2.)
-  render.ctx.set_source_rgba(0,0,0,0.8)
+  render.ctx.set_source_rgb(0,0,0)
 
   the,xy = turtle(0.5*PI,START_X,START_Y,NUMMAX)
-  #render.line(xy)
 
   for i in xrange(NUM_LINES):
 
