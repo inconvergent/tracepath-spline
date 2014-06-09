@@ -46,13 +46,13 @@ NUMMAX = int(2*SIZE)
 NUM_LINES = int(SIZE*W/PIX_BETWEEN)
 H = W/NUM_LINES
 
-FILENAME = 'ee'
+FILENAME = './img/img2'
 COLOR_PATH = '../colors/shimmering.gif'
 
 INIT_TURTLE_ANGLE_NOISE = 0.
 NOISE_SCALE = ONE ## use ~2 for SIZE=20000
 
-GRAINS = 50
+GRAINS = 60
 ALPHA = 0.1
 
 
@@ -152,6 +152,7 @@ class Render(object):
 
     num_points = max(left.shape[0],right.shape[0])
     #num_points /= 2
+    num_points = int(W*SIZE)
 
     left_tck,left_u = interpolate.splprep([left[:,0],\
                                            left[:,1]],s=0)
@@ -184,8 +185,8 @@ class Render(object):
       a = aa[i]
       d = dd[i]
       scales = random(GRAINS)*d
-      xp = lx - scales*cos(a)
-      yp = ly - scales*sin(a)
+      xp = lx + scales*cos(a)
+      yp = ly + scales*sin(a)
 
       for x,y in zip(xp,yp):
         self.ctx.rectangle(x,y,ONE,ONE)
@@ -311,9 +312,11 @@ def main():
 
     if not i%100:
 
-      fn = '{:s}_{:05d}.png'.format(FILENAME,i)
-      print fn
-      render.sur.write_to_png(fn)
+      if i>0:
+
+        fn = '{:s}_{:05d}.png'.format(FILENAME,i)
+        print fn
+        render.sur.write_to_png(fn)
 
   render.sur.write_to_png('{:s}_final.png'.format(FILENAME))
 
