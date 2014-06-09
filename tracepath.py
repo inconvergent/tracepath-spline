@@ -19,7 +19,7 @@ PI = pi
 TWOPI = pi*2.
 PIHALF = pi*0.5
 
-SIZE = 5000
+SIZE = 2000
 ONE = 1./SIZE
 
 BACK = 1.
@@ -32,7 +32,9 @@ Y_MAX = 1-10*ONE
 DIST_NEAR_INDICES = np.inf
 
 W = 0.9
-PIX_BETWEEN = 20
+PIX_BETWEEN = 10
+#PIXNOISE = ONE*2
+#PIXMIN = ONE*3
 
 START_X = (1.-W)*0.5
 STOP_X = 1.-START_X
@@ -44,10 +46,10 @@ NUMMAX = int(2*SIZE)
 NUM_LINES = int(SIZE*W/PIX_BETWEEN)
 H = W/NUM_LINES
 
-FILENAME = 'dd'
+FILENAME = 'ee'
 
 INIT_TURTLE_ANGLE_NOISE = 0.
-NOISE_SCALE = ONE*3.4 ## use ~2 for SIZE=20000
+NOISE_SCALE = ONE ## use ~2 for SIZE=20000
 
 #LINE_RAD = ONE*2.4
 
@@ -208,11 +210,16 @@ def main():
 
   the,xy = turtle(0.5*PI,START_X,START_Y,NUMMAX)
 
+  pix = PIX_BETWEEN*ONE
+
   for i in xrange(NUM_LINES):
 
+    #pix += myrandom(1)*PIXNOISE
+    #if pix < PIXMIN:
+      #pix = PIXMIN
 
     path = Path(xy)
-    path.trace(PIX_BETWEEN*ONE,-PIHALF)
+    path.trace(pix,-PIHALF)
     path.noise()
     path.interpolate(PIX_BETWEEN*2)
 
