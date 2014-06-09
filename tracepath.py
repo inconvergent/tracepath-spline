@@ -10,7 +10,7 @@ from numpy.random import random, normal, randint, shuffle
 from scipy import interpolate
 
 import numpy as np
-import cairo
+import cairo, Image
 from time import time as time
 from scipy.spatial import cKDTree
 
@@ -47,9 +47,13 @@ NUM_LINES = int(SIZE*W/PIX_BETWEEN)
 H = W/NUM_LINES
 
 FILENAME = 'ee'
+COLOR_PATH = '../colors/shimmering.gif'
 
 INIT_TURTLE_ANGLE_NOISE = 0.
 NOISE_SCALE = ONE ## use ~2 for SIZE=20000
+
+GRAINS = 50
+ALPHA = 0.1
 
 
 def myrandom(size):
@@ -109,6 +113,23 @@ class Render(object):
     self.sur = sur
     self.ctx = ctx
 
+    self.__get_colors(COLOR_PATH)
+    self.n_colors = len(self.colors)
+
+  def __get_colors(self,f):
+    scale = 1./255.
+    im = Image.open(f)
+    w,h = im.size
+    rgbim = im.convert('RGB')
+    res = []
+    for i in xrange(0,w):
+      for j in xrange(0,h):
+        r,g,b = rgbim.getpixel((i,j))
+        res.append((r*scale,g*scale,b*scale))
+
+    shuffle(res)
+    self.colors = res
+
   def line(self,xy):
 
     self.ctx.move_to(xy[0,0],xy[0,1])
@@ -130,7 +151,7 @@ class Render(object):
   def sand_paint(self,left,right):
 
     num_points = max(left.shape[0],right.shape[0])
-    num_points /= 2
+    #num_points /= 2
 
     left_tck,left_u = interpolate.splprep([left[:,0],\
                                            left[:,1]],s=0)
@@ -146,23 +167,26 @@ class Render(object):
     right_out = interpolate.splev(steps,right_tck)
     right_res = column_stack(right_out)
 
-    self.ctx.set_source_rgba(0,0,0,0.1)
-
     dxx = right_res[:,0]-left_res[:,0]
     dyy = right_res[:,1]-left_res[:,1]
     dd = square(dxx)+square(dyy)
     sqrt(dd,dd)
     aa = arctan2(dyy,dxx)
-    GRAINS = 10
+
+    r,g,b = self.colors[ int(random()*self.n_colors) ]
+    self.ctx.set_source_rgba(r,g,b,ALPHA)
 
     for i,((lx,ly),(rx,ry)) in enumerate(zip(left_res,right_res)):
 
+      #r,g,b = self.colors[ int(((lx+rx)/2*SIZE)%self.n_colors) ]
+      #self.ctx.set_source_rgba(r,g,b,ALPHA)
+
       a = aa[i]
       d = dd[i]
-
       scales = random(GRAINS)*d
       xp = lx - scales*cos(a)
       yp = ly - scales*sin(a)
+
       for x,y in zip(xp,yp):
         self.ctx.rectangle(x,y,ONE,ONE)
         self.ctx.fill()
@@ -276,6 +300,7 @@ def main():
 
     ## render nodes above STOP_Y and below START_Y
     draw_start,draw_stop = get_limit_indices(xy,top=START_Y,bottom=STOP_Y)
+    #render.ctx.set_source_rgba(0,0,0,0.3)
     #render.line(xy[draw_start:draw_stop,:])
 
     render.sand_paint(last_xy,xy[draw_start:draw_stop,:]) 
