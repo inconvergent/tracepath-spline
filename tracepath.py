@@ -51,8 +51,6 @@ FILENAME = 'ee'
 INIT_TURTLE_ANGLE_NOISE = 0.
 NOISE_SCALE = ONE ## use ~2 for SIZE=20000
 
-#LINE_RAD = ONE*2.4
-
 
 def myrandom(size):
 
@@ -129,6 +127,45 @@ class Render(object):
     self.ctx.arc(xy[0],xy[1],r,0,TWOPI)
     self.ctx.stroke()
 
+  def sand_paint(self,left,right):
+
+    num_points = max(left.shape[0],right.shape[0])
+    num_points /= 2
+
+    left_tck,left_u = interpolate.splprep([left[:,0],\
+                                           left[:,1]],s=0)
+
+    steps = np.linspace(0,1,num_points)
+    left_out = interpolate.splev(steps,left_tck)
+    left_res = column_stack(left_out)
+
+    right_tck,right_u = interpolate.splprep([right[:,0],\
+                                             right[:,1]],s=0)
+
+    steps = np.linspace(0,1,num_points)
+    right_out = interpolate.splev(steps,right_tck)
+    right_res = column_stack(right_out)
+
+    self.ctx.set_source_rgba(0,0,0,0.1)
+
+    dxx = right_res[:,0]-left_res[:,0]
+    dyy = right_res[:,1]-left_res[:,1]
+    dd = square(dxx)+square(dyy)
+    sqrt(dd,dd)
+    aa = arctan2(dyy,dxx)
+    GRAINS = 10
+
+    for i,((lx,ly),(rx,ry)) in enumerate(zip(left_res,right_res)):
+
+      a = aa[i]
+      d = dd[i]
+
+      scales = random(GRAINS)*d
+      xp = lx - scales*cos(a)
+      yp = ly - scales*sin(a)
+      for x,y in zip(xp,yp):
+        self.ctx.rectangle(x,y,ONE,ONE)
+        self.ctx.fill()
 
 class Path(object):
 
@@ -211,6 +248,9 @@ def main():
   the,xy = turtle(0.5*PI,START_X,START_Y,NUMMAX)
 
   pix = PIX_BETWEEN*ONE
+  
+  draw_start,draw_stop = get_limit_indices(xy,top=START_Y,bottom=STOP_Y)
+  last_xy = xy[draw_start:draw_stop,:]
 
   for i in xrange(NUM_LINES):
 
@@ -236,7 +276,10 @@ def main():
 
     ## render nodes above STOP_Y and below START_Y
     draw_start,draw_stop = get_limit_indices(xy,top=START_Y,bottom=STOP_Y)
-    render.line(xy[draw_start:draw_stop,:])
+    #render.line(xy[draw_start:draw_stop,:])
+
+    render.sand_paint(last_xy,xy[draw_start:draw_stop,:]) 
+    last_xy = xy[draw_start:draw_stop,:]
 
     if (xy[:,0]>STOP_X).any():
       break
