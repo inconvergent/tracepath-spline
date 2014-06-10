@@ -50,7 +50,7 @@ FILENAME = './img/img2'
 COLOR_PATH = '../colors/shimmering.gif'
 
 INIT_TURTLE_ANGLE_NOISE = 0.
-NOISE_SCALE = ONE ## use ~2 for SIZE=20000
+NOISE_SCALE = 2*ONE ## use ~2 for SIZE=20000
 
 GRAINS = 60
 ALPHA = 0.1
@@ -152,7 +152,7 @@ class Render(object):
 
     num_points = max(left.shape[0],right.shape[0])
     #num_points /= 2
-    num_points = int(W*SIZE)
+    num_points = int(W*SIZE)*5
 
     left_tck,left_u = interpolate.splprep([left[:,0],\
                                            left[:,1]],s=0)
@@ -174,13 +174,16 @@ class Render(object):
     sqrt(dd,dd)
     aa = arctan2(dyy,dxx)
 
-    r,g,b = self.colors[ int(random()*self.n_colors) ]
-    self.ctx.set_source_rgba(r,g,b,ALPHA)
+    #r,g,b = self.colors[ int(random()*self.n_colors) ]
+    #self.ctx.set_source_rgba(r,g,b,ALPHA)
 
     for i,((lx,ly),(rx,ry)) in enumerate(zip(left_res,right_res)):
 
       #r,g,b = self.colors[ int(((lx+rx)/2*SIZE)%self.n_colors) ]
       #self.ctx.set_source_rgba(r,g,b,ALPHA)
+
+      r,g,b = self.colors[ i%self.n_colors ]
+      self.ctx.set_source_rgba(r,g,b,ALPHA)
 
       a = aa[i]
       d = dd[i]
@@ -310,7 +313,7 @@ def main():
     if (xy[:,0]>STOP_X).any():
       break
 
-    if not i%100:
+    if not i%50:
 
       if i>0:
 
