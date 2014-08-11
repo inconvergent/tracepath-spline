@@ -19,7 +19,7 @@ PI = pi
 TWOPI = pi*2.
 PIHALF = pi*0.5
 
-SIZE = 2000
+SIZE = 6000
 ONE = 1./SIZE
 
 BACK = 1.
@@ -32,7 +32,7 @@ Y_MAX = 1-10*ONE
 DIST_NEAR_INDICES = np.inf
 
 W = 0.9
-PIX_BETWEEN = 10
+PIX_BETWEEN = 20
 #PIXNOISE = ONE*2
 #PIXMIN = ONE*3
 
@@ -46,11 +46,11 @@ NUMMAX = int(2*SIZE)
 NUM_LINES = int(SIZE*W/PIX_BETWEEN)
 H = W/NUM_LINES
 
-FILENAME = './img/img2'
+FILENAME = './img/fivepx2'
 COLOR_PATH = '../colors/shimmering.gif'
 
 INIT_TURTLE_ANGLE_NOISE = 0.
-NOISE_SCALE = 2*ONE ## use ~2 for SIZE=20000
+NOISE_SCALE = 3*ONE ## use ~2 for SIZE=20000
 
 GRAINS = 60
 ALPHA = 0.1
@@ -270,8 +270,8 @@ def main():
 
   render = Render(SIZE)
 
-  render.ctx.set_line_width(ONE*2.)
-  render.ctx.set_source_rgb(0,0,0)
+  render.ctx.set_line_width(ONE*2.5)
+  render.ctx.set_source_rgba(0,0,0,0.95)
 
   the,xy = turtle(0.5*PI,START_X,START_Y,NUMMAX)
 
@@ -304,11 +304,10 @@ def main():
 
     ## render nodes above STOP_Y and below START_Y
     draw_start,draw_stop = get_limit_indices(xy,top=START_Y,bottom=STOP_Y)
-    #render.ctx.set_source_rgba(0,0,0,0.3)
-    #render.line(xy[draw_start:draw_stop,:])
+    render.line(xy[draw_start:draw_stop,:])
 
-    render.sand_paint(last_xy,xy[draw_start:draw_stop,:]) 
-    last_xy = xy[draw_start:draw_stop,:]
+    #render.sand_paint(last_xy,xy[draw_start:draw_stop,:]) 
+    #last_xy = xy[draw_start:draw_stop,:]
 
     if (xy[:,0]>STOP_X).any():
       break
