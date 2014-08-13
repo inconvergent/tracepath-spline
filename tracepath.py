@@ -20,17 +20,16 @@ PI = pi
 TWOPI = pi*2.
 PIHALF = pi*0.5
 
-SIZE = 1000
+SIZE = 2000
 ONE = 1./SIZE
 
-BACK = 1.
+BACK = [1,1,1,1]
+FRONT = [0,0,0,0.5]
 
 X_MIN = 0+10*ONE
 Y_MIN = 0+10*ONE
 X_MAX = 1-10*ONE
 Y_MAX = 1-10*ONE
-
-DIST_NEAR_INDICES = np.inf
 
 W = 0.9
 PIX_BETWEEN = 10
@@ -42,17 +41,12 @@ START_Y = (1.-W)*0.5
 STOP_Y = 1.-START_Y
 
 NUMMAX = int(2*SIZE)
-NUM_LINES = int(SIZE*W/PIX_BETWEEN)
 
 FILENAME = './img/img'
 #COLOR_PATH = '../colors/shimmering.gif'
 
-INIT_TURTLE_ANGLE_NOISE = 0.
-#NOISE_SCALE = 3*ONE ## use ~2 for SIZE=20000
-
 GRAINS = 60
 ALPHA = 0.1
-
 
 def myrandom(size):
 
@@ -60,21 +54,6 @@ def myrandom(size):
   res = 1.-2.*random(size=size)
 
   return res
-
-
-def turtle(sthe,sx,sy,steps):
-
-  noise = myrandom(size=steps)*INIT_TURTLE_ANGLE_NOISE
-  noise[0] = 0.
-  the = sthe+cumsum(noise)
-
-  dx = cos(the)*ONE
-  dy = sin(the)*ONE
-
-  xy = column_stack(( START_X + cumsum(dx),START_Y + cumsum(dy)))
-
-  return the, xy
-
 
 def get_limit_indices(xy,top,bottom):
 
@@ -104,15 +83,20 @@ class Render(object):
     sur = cairo.ImageSurface(cairo.FORMAT_ARGB32,self.n,self.n)
     ctx = cairo.Context(sur)
     ctx.scale(self.n,self.n)
-    ctx.set_source_rgb(BACK,BACK,BACK)
-    ctx.rectangle(0,0,1,1)
-    ctx.fill()
 
     self.sur = sur
     self.ctx = ctx
 
+    self.clear_canvas()
+
     #self.__get_colors(COLOR_PATH)
     #self.n_colors = len(self.colors)
+
+  def clear_canvas(self):
+
+    self.ctx.set_source_rgba(*BACK)
+    self.ctx.rectangle(0, 0, 1, 1)
+    self.ctx.fill()
 
   def __get_colors(self,f):
     scale = 1./255.
@@ -276,12 +260,15 @@ def main():
   render = Render(SIZE)
 
   render.ctx.set_line_width(ONE*2.5)
-  render.ctx.set_source_rgba(0,0,0,0.95)
+  render.ctx.set_source_rgba(*FRONT)
 
-  the,xy = turtle(0.5*PI,START_X,START_Y,NUMMAX)
+  the = 0.5*PI*ones(NUMMAX)
+  xy = column_stack((ones(NUMMAX)*START_X,linspace(START_Y,STOP_Y,NUMMAX)))
 
   draw_start,draw_stop = get_limit_indices(xy,top=START_Y,bottom=STOP_Y)
   last_xy = xy[draw_start:draw_stop,:]
+
+  draw_circles = render.circles
 
   for i in count():
 
@@ -298,23 +285,26 @@ def main():
 
     xy = path.xy_interpolated
 
-    print 'num',i,'points', len(path.xy_circles),'x', xy[:,0].max()
-
     ## remove nodes above and below canvas
     canvas_start,canvas_stop = get_limit_indices(xy,top=0.,bottom=1.)
     xy = xy[canvas_start:canvas_stop,:]
 
     ## render nodes above STOP_Y and below START_Y
     draw_start,draw_stop = get_limit_indices(xy,top=START_Y,bottom=STOP_Y)
-    render.circles(xy[draw_start:draw_stop,:],ones(draw_stop-draw_start)*ONE)
+    draw_circles(xy[draw_start:draw_stop,:],\
+                 ones(draw_stop-draw_start)*ONE)
 
     ## experimental
     #render.sand_paint(last_xy,xy[draw_start:draw_stop,:])
     #last_xy = xy[draw_start:draw_stop,:]
 
-    if (xy[:,0]>STOP_X).any():
+    xmax = xy[:,0].max()
+    if (xmax>STOP_X):
       break
 
+    print 'num',i,'points', len(path.xy_circles),'x', xmax
+
+    ## partial results
     if not i%50:
 
       if i>0:
@@ -327,6 +317,7 @@ def main():
 
 
 if __name__ == '__main__':
+
   if False:
     import pstats
     import cProfile
