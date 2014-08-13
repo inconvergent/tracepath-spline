@@ -4,10 +4,11 @@
 from numpy import cos, sin, pi, arctan2, sqrt,\
                   square, linspace, zeros, array,\
                   concatenate, delete, row_stack, column_stack,\
-                  cumsum
+                  cumsum, ones
 
 from numpy.random import random, normal, randint, shuffle
 from scipy import interpolate
+from itertools import count
 
 import numpy as np
 import cairo, Image
@@ -19,7 +20,7 @@ PI = pi
 TWOPI = pi*2.
 PIHALF = pi*0.5
 
-SIZE = 6000
+SIZE = 1000
 ONE = 1./SIZE
 
 BACK = 1.
@@ -32,9 +33,7 @@ Y_MAX = 1-10*ONE
 DIST_NEAR_INDICES = np.inf
 
 W = 0.9
-PIX_BETWEEN = 20
-#PIXNOISE = ONE*2
-#PIXMIN = ONE*3
+PIX_BETWEEN = 10
 
 START_X = (1.-W)*0.5
 STOP_X = 1.-START_X
@@ -44,13 +43,12 @@ STOP_Y = 1.-START_Y
 
 NUMMAX = int(2*SIZE)
 NUM_LINES = int(SIZE*W/PIX_BETWEEN)
-H = W/NUM_LINES
 
-FILENAME = './img/fivepx2'
-COLOR_PATH = '../colors/shimmering.gif'
+FILENAME = './img/img'
+#COLOR_PATH = '../colors/shimmering.gif'
 
 INIT_TURTLE_ANGLE_NOISE = 0.
-NOISE_SCALE = 3*ONE ## use ~2 for SIZE=20000
+#NOISE_SCALE = 3*ONE ## use ~2 for SIZE=20000
 
 GRAINS = 60
 ALPHA = 0.1
@@ -113,8 +111,8 @@ class Render(object):
     self.sur = sur
     self.ctx = ctx
 
-    self.__get_colors(COLOR_PATH)
-    self.n_colors = len(self.colors)
+    #self.__get_colors(COLOR_PATH)
+    #self.n_colors = len(self.colors)
 
   def __get_colors(self,f):
     scale = 1./255.
@@ -132,16 +130,18 @@ class Render(object):
 
   def line(self,xy):
 
-    self.ctx.move_to(xy[0,0],xy[0,1])
+    cx = self.ctx
+    cx.move_to(xy[0,0],xy[0,1])
     for (x,y) in xy[1:]:
-      self.ctx.line_to(x,y)
-    self.ctx.stroke()
+      cx.line_to(x,y)
+    cx.stroke()
 
   def circles(self,xy,rr):
 
+    cx = self.ctx
     for r,(x,y) in zip(rr,xy):
-      self.ctx.arc(x,y,r,0,TWOPI)
-      self.ctx.fill()
+      cx.arc(x,y,r,0,TWOPI)
+      cx.fill()
 
   def circle(self,xy,r):
 
@@ -149,6 +149,9 @@ class Render(object):
     self.ctx.stroke()
 
   def sand_paint(self,left,right):
+    """
+    not in use.
+    """
 
     num_points = max(left.shape[0],right.shape[0])
     #num_points /= 2
@@ -197,16 +200,18 @@ class Render(object):
 
 class Path(object):
 
-  def __init__(self,xy):
+  def __init__(self,xy,r):
 
     self.xy = xy
+    self.r = r
     self.tree = cKDTree(xy)
 
-  def trace(self,r,the):
+  def trace(self,the):
+
+    r = self.r
+    numxy = len(self.xy)
 
     all_near_inds = self.tree.query_ball_point(self.xy,r)
-
-    numxy = len(self.xy)
 
     near_last = []
     circles = []
@@ -251,7 +256,7 @@ class Path(object):
 
     alpha_noise = myrandom(len(self.xy_new))*pi
     noise = column_stack([cos(alpha_noise),\
-                          sin(alpha_noise)])*NOISE_SCALE
+                          sin(alpha_noise)])*self.r*0.1
     self.xy_new += noise
 
   def interpolate(self,num_p_multiplier):
@@ -275,28 +280,25 @@ def main():
 
   the,xy = turtle(0.5*PI,START_X,START_Y,NUMMAX)
 
-  pix = PIX_BETWEEN*ONE
-  
   draw_start,draw_stop = get_limit_indices(xy,top=START_Y,bottom=STOP_Y)
   last_xy = xy[draw_start:draw_stop,:]
 
-  for i in xrange(NUM_LINES):
+  for i in count():
 
-    #pix += myrandom(1)*PIXNOISE
-    #if pix < PIXMIN:
-      #pix = PIXMIN
+    ## gradient-like distribution of lines
+    pix = sqrt(1+i)*ONE
 
-    path = Path(xy)
-    path.trace(pix,-PIHALF)
+    ## linear distribution of lines
+    #pix = PIX_BETWEEN*ONE
+
+    path = Path(xy,pix)
+    path.trace(-PIHALF)
     path.noise()
-    path.interpolate(PIX_BETWEEN*2)
+    path.interpolate(int(pix/ONE)*2)
 
     xy = path.xy_interpolated
 
-    print 'num',i,'tot', NUM_LINES, 'points', len(path.xy_circles)
-
-    #line_rad = random(size=draw_stop-draw_start)*LINE_RAD
-    #render.circles(xy[draw_start:draw_stop,:],a[draw_start:draw_stop])
+    print 'num',i,'points', len(path.xy_circles),'x', xy[:,0].max()
 
     ## remove nodes above and below canvas
     canvas_start,canvas_stop = get_limit_indices(xy,top=0.,bottom=1.)
@@ -304,9 +306,10 @@ def main():
 
     ## render nodes above STOP_Y and below START_Y
     draw_start,draw_stop = get_limit_indices(xy,top=START_Y,bottom=STOP_Y)
-    render.line(xy[draw_start:draw_stop,:])
+    render.circles(xy[draw_start:draw_stop,:],ones(draw_stop-draw_start)*ONE)
 
-    #render.sand_paint(last_xy,xy[draw_start:draw_stop,:]) 
+    ## experimental
+    #render.sand_paint(last_xy,xy[draw_start:draw_stop,:])
     #last_xy = xy[draw_start:draw_stop,:]
 
     if (xy[:,0]>STOP_X).any():
