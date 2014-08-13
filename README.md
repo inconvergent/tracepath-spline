@@ -1,17 +1,12 @@
-about tracepath\_circle
+Tracepath\_spline
 =============
 
-Somewhat inspired by John Franzen: Each Line One Breath:
+After watching John Franzen drawing his incredibly fascinating "Each Line One
+Breath" drawings, I wanted to try doing somthing similar using code. This is
+one of the results.
 
-  - http://www.johnfranzen.com/art/EACH\_LINE\_ONE\_BREATH.html
+![tracepath](http://inconvergent.net/xstatic/img-content/imgu.jpg "tracepath")
 
-
-license:
---------
-You can do as you please with this code, as long as you don't make money from
-it.
-
-
-----
-Anders Hoff 2014
+-----------
+http://inconvergent.net
 
