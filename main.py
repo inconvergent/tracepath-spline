@@ -14,7 +14,7 @@ PI = pi
 TWOPI = pi*2.
 PIHALF = pi*0.5
 
-SIZE = 2000
+SIZE = 1500
 ONE = 1./SIZE
 
 LINE_WIDTH = 1.5*ONE
@@ -50,11 +50,15 @@ def main():
   from modules.path import Path
 
   from modules.helpers import get_limit_indices
+  from modules.export import Exporter
 
   from render import Render
-
   from fn import Fn
+
   fn = Fn(prefix='./res/')
+
+  exporter = Exporter()
+
 
   render = Render(SIZE, BACK, FRONT)
   render.set_line_width(LINE_WIDTH)
@@ -92,6 +96,8 @@ def main():
                  #ones(draw_stop-draw_start)*ONE)
     render.path(xy[draw_start:draw_stop,:])
 
+    exporter.add(xy[draw_start:draw_stop,:])
+
     xmax = xy[:,0].max()
     if (xmax>STOP_X):
       break
@@ -100,7 +106,9 @@ def main():
 
   name = fn.name()
 
+  render.transparent_pix()
   render.write_to_png(name+'.png')
+  exporter.export(name+'.2obj')
 
 
 if __name__ == '__main__':
